@@ -40,7 +40,8 @@
          delete_pool/1,
          send_body_part/2, send_body_part/3,
          send_trailers/2, send_trailers/3,
-         get_body_part/1, get_body_part/2
+         get_body_part/1, get_body_part/2,
+         kill_client/1
         ]).
 
 -include("lhttpc_types.hrl").
