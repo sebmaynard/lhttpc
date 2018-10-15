@@ -150,6 +150,9 @@ execute(From, Host, Port, Ssl, Path, Method, Hdrs0, Body, Options) ->
     %% Get a socket for the pool or exit
     %Socket = lhttpc_manager:ensure_call(Pool, SocketRequest, Options),
     Socket = lhttpc_manager:ensure_call(Pool, self(), Host, Port, Ssl, Options),
+    % get the socket connect settings from client or use defaults
+    DefConOptions = application:get_env(lhttpc, connect_options, []),
+    DefConTimeout = proplists:get_value(DefConOptions, connect_timeout, infinity),
     State = #client_state{
         host = Host,
         port = Port,
@@ -159,9 +162,8 @@ execute(From, Host, Port, Ssl, Path, Method, Hdrs0, Body, Options) ->
         requester = From,
         request_headers = Hdrs,
         socket = Socket,
-        connect_timeout = proplists:get_value(connect_timeout, Options,
-            infinity),
-        connect_options = proplists:get_value(connect_options, Options, []),
+        connect_timeout = proplists:get_value(connect_timeout, Options, DefConTimeout),
+        connect_options = proplists:get_value(connect_options, Options, DefConOptions),
         attempts = 1 + proplists:get_value(send_retry, Options, 1),
         partial_upload = PartialUpload,
         upload_window = UploadWindowSize,
