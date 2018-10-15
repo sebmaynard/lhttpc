@@ -150,6 +150,16 @@ execute(From, Host, Port, Ssl, Path, Method, Hdrs0, Body, Options) ->
     %% Get a socket for the pool or exit
     %Socket = lhttpc_manager:ensure_call(Pool, SocketRequest, Options),
     Socket = lhttpc_manager:ensure_call(Pool, self(), Host, Port, Ssl, Options),
+    % get the socket connect settings from client or use defaults
+    % unfold all atoms and allow users to overwrite a single param only
+    DefOptions = proplists:unfold(application:get_env(lhttpc, connect_options, [])),
+    DefTimeout = proplists:get_value(connect_timeout, DefOptions, infinity),
+    UserOptions = proplists:unfold(proplists:get_value(connect_options, Options, [])),
+    EffectiveOptions = lists:ukeymerge(1,
+        lists:ukeysort(1, UserOptions),
+        lists:ukeysort(1, DefOptions)
+    ),
+    EffectiveTimeout = proplists:get_value(connect_timeout, Options, DefTimeout),
     State = #client_state{
         host = Host,
         port = Port,
@@ -159,9 +169,8 @@ execute(From, Host, Port, Ssl, Path, Method, Hdrs0, Body, Options) ->
         requester = From,
         request_headers = Hdrs,
         socket = Socket,
-        connect_timeout = proplists:get_value(connect_timeout, Options,
-            infinity),
-        connect_options = proplists:get_value(connect_options, Options, []),
+        connect_timeout = EffectiveTimeout,
+        connect_options = EffectiveOptions,
         attempts = 1 + proplists:get_value(send_retry, Options, 1),
         partial_upload = PartialUpload,
         upload_window = UploadWindowSize,
