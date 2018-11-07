@@ -153,7 +153,7 @@ execute(From, Host, Port, Ssl, Path, Method, Hdrs0, Body, Options) ->
     % get the socket connect settings from client or use defaults
     % unfold all atoms and allow users to overwrite a single param only
     DefOptions = proplists:unfold(application:get_env(lhttpc, connect_options, [])),
-    DefTimeout = proplists:get_value(connect_timeout, DefOptions, infinity),
+    DefTimeout = application:get_env(lhttpc, connect_timeout, infinity),
     UserOptions = proplists:unfold(proplists:get_value(connect_options, Options, [])),
     EffectiveTcpOptions0 = lists:ukeymerge(1,
         lists:ukeysort(1, UserOptions),
