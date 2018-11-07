@@ -155,10 +155,11 @@ execute(From, Host, Port, Ssl, Path, Method, Hdrs0, Body, Options) ->
     DefOptions = proplists:unfold(application:get_env(lhttpc, connect_options, [])),
     DefTimeout = proplists:get_value(connect_timeout, DefOptions, infinity),
     UserOptions = proplists:unfold(proplists:get_value(connect_options, Options, [])),
-    EffectiveTcpOptions = lists:ukeymerge(1,
+    EffectiveTcpOptions0 = lists:ukeymerge(1,
         lists:ukeysort(1, UserOptions),
         lists:ukeysort(1, DefOptions)
     ),
+    EffectiveTcpOptions = fix_inet_options(EffectiveTcpOptions0),
     EffectiveOptions = case Ssl of
         true ->
             DefSslOptions = application:get_env(lhttpc, ssl_options, []),
@@ -956,3 +957,18 @@ is_ipv6_host(Host) ->
                     end
             end
     end.
+
+%%------------------------------------------------------------------------------
+%% @private
+%%------------------------------------------------------------------------------
+fix_inet_options(Options) ->
+    lists:filtermap(
+        fun ({AddressFamily, Bool}) when AddressFamily =:= inet;
+                                         AddressFamily =:= inet6;
+                                         AddressFamily =:= local ->
+                case Bool of
+                    true -> {true, AddressFamily};
+                    false -> false
+                end;
+            (Option) -> {true, Option}
+        end, Options).
