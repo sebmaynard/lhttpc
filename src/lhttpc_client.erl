@@ -155,10 +155,23 @@ execute(From, Host, Port, Ssl, Path, Method, Hdrs0, Body, Options) ->
     DefOptions = proplists:unfold(application:get_env(lhttpc, connect_options, [])),
     DefTimeout = proplists:get_value(connect_timeout, DefOptions, infinity),
     UserOptions = proplists:unfold(proplists:get_value(connect_options, Options, [])),
-    EffectiveOptions = lists:ukeymerge(1,
+    EffectiveTcpOptions = lists:ukeymerge(1,
         lists:ukeysort(1, UserOptions),
         lists:ukeysort(1, DefOptions)
     ),
+    EffectiveOptions = case Ssl of
+        true ->
+            DefSslOptions = application:get_env(lhttpc, ssl_options, []),
+            UserSslOptions = proplists:get_value(ssl_options, Options, []),
+            EffectiveSslOpts = lists:ukeymerge(1,
+                lists:ukeysort(1, UserSslOptions),
+                lists:ukeysort(1, DefSslOptions)
+            ),
+            EffectiveTcpOptions ++ EffectiveSslOpts;
+        false ->
+            EffectiveTcpOptions
+    end,
+
     EffectiveTimeout = proplists:get_value(connect_timeout, Options, DefTimeout),
     State = #client_state{
         host = Host,
